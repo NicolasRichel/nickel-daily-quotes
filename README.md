@@ -4,7 +4,8 @@
 A simple and customizable message display.  
 Given a list of messages (quotes) the `<nickel-daily-quotes>` element will successively
 display each message by switching the displayed message at regular interval.
-It uses the [`<nickel-timer>`]() element to handle time based trigger.
+It uses the [`<nickel-timer>`](https://github.com/NicolasRichel/nickel-timer)
+element to handle time based trigger.
 
 <!--
 ```
