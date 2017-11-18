@@ -1,0 +1,168 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../nickel-timer/nickel-timer.html">
+
+<dom-module id="nickel-daily-quotes">
+  <template>
+    <custom-style>
+      <style is="custom-style">
+        :host {
+          display: block;
+        }
+
+        #display {
+					display: table-cell;
+          width: var(--daily-quotes-width, 250px);
+          height: var(--daily-quotes-height, 30px);
+          margin: var(--daily-quotes-margin, 5px);
+          padding: var(--daily-quotes-padding, 8px);
+          border: var(--daily-quotes-border-width, 1px) solid var(--daily-quotes-border-color, black);
+          border-radius: var(--daily-quotes-border-radius, 4px);
+          background-color: var(--daily-quotes-background-color, white);
+          color: var(--daily-quotes-color, black);
+          text-align: center;
+					vertical-align: middle;
+          @apply --daily-quotes-mixin;
+        }
+      </style>
+    </custom-style>
+    <div class="container">
+      <nickel-timer
+        timer-interval="[[period]]">
+      </nickel-timer>
+      <div id="display">[[quote]]</div>
+      <div hidden><slot name="quotes"></slot></div>
+    </div>
+  </template>
+  <script>
+    'use strict';
+    /**
+     * `nickel-daily-quotes` is a very basic element used to display messages (or quotes).
+     * This element is design to be highly customizable.
+     *
+     *  Example of usage with the quotes property
+     * ```html
+     *	<nickel-daily-quotes
+     *		quotes='["Hello !",
+     * 				 "How are you today ?",
+     * 				 "It looks like a great day !"
+     * 				]'>
+     * 	</nickel-daily-quotes>
+     * ```
+     *
+     *  Example of usage with a light DOM
+     * ```html
+     * 	<nickel-daily-quotes>
+     * 		<ul>
+     * 			<li>Hello !</li>
+     * 			<li>How are you today ?</li>
+     * 			<li>It looks like a great day !</li>
+     * 		</ul>
+     * 	</nickel-daily-quotes>
+     * ```
+     *
+     * ### Styling
+     *
+     * The following custom properties and mixins are available for styling:
+     *
+     * Custom Property                   | Description                         | Default
+     * ----------------------------------|-------------------------------------|---------
+     * `--daily-quotes-width`            | width of the display box            | `250px`
+     * `--daily-quotes-height`           | height of the display box           | `30px`
+     * `--daily-quotes-margin`           | margin of the display box           | `5px`
+     * `--daily-quotes-padding`          | padding of the display box          | `8px`
+     * `--daily-quotes-border-width`     | border width of the display box     | `1px`
+     * `--daily-quotes-border-color`     | border color of the display box     | `black`
+     * `--daily-quotes-border-radius`    | border radius of the display box    | `4px`
+     * `--daily-quotes-background-color` | background color of the display box | `white`
+     * `--daily-quotes-color`            | text color of the messages          | `black`
+     * `--daily-quotes-mixin`            | mixin applied to the display box    | `{}`
+     *
+     * @customElement
+     * @polymer
+     * @demo demo/index.html
+     */
+    class NickelDailyQuotes extends Polymer.Element {
+
+      static get is() { return 'nickel-daily-quotes'; }
+
+      static get properties() {
+        return {
+          /** The counter value. */
+          count: {
+            type: Number,
+            value: 0,
+            notify: true
+          },
+
+          /** Number of seconds to wait before the displayed quote change. */
+          period: {
+            type: Number,
+            value: 10
+          },
+
+          /** Quote to display. (Dynamically created) */
+// 					quote: {
+// 						type: String,
+// 						computed: '_getQuote(quotes, count)'
+// 					},
+
+          /** List of available quotes. */
+          quotes: {
+            type: Array,
+            value: () => { return []; }
+          }
+        };
+      }
+
+      ready() {
+        super.ready();
+
+        this._addLightDomItemsToQuotes();
+
+        // Dynamically creates the `quote` computed property and then sets this
+				// property value by 'manually' calling `_getQuote`.
+        this._createComputedProperty('quote', '_getQuote(quotes, count)');
+        this.quote = this._getQuote(this.quotes, this.count);
+
+        // Set the time trigger
+        this.shadowRoot.querySelector('nickel-timer').addEventListener('tic', (event) => {
+          this.set('count', (this.count+1)%(this.quotes.length));
+        });
+      }
+
+      /**
+       * Find the first `<ul>` or `<ol>` element at the top level of the light DOM and
+       * add the content of all its `<li>` elements at the end of the `quotes` array.
+       */
+      _addLightDomItemsToQuotes() {
+				// Retreive the list of slotted nodes and their names
+        const nodes = this.shadowRoot.querySelector('slot').assignedNodes();
+				const nodeNames = nodes.map((node) => { return node.nodeName; });
+				// Find any <ul> or <ol> element in the slotted nodes
+        let i = nodeNames.indexOf('UL');
+        if (i<0) i = nodeNames.indexOf('OL');
+				// If a list element was found then set the `quotes` array with the
+				// content of each <li> element in the list
+        if (i>=0) {
+          nodes[i].childNodes.forEach((node) => {
+            if (node.nodeName==='LI') this.push('quotes', node.textContent);
+          });
+        }
+      }
+
+      /**
+       * Initialize the quote to display according to the quotes and the counter values.
+       * This function is called each time the quotes or the counter changes.
+       *
+       * @param {Array} quotes List of quotes
+       * @param {Number} n Counter value
+       * @return {String} the n-th quote
+       */
+      _getQuote(quotes, n) {
+        if (quotes.length) return quotes[n];
+        else return '--{ No Quote }--';
+      }
+    }
+    window.customElements.define(NickelDailyQuotes.is, NickelDailyQuotes);
+  </script>
+</dom-module>
